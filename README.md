@@ -46,7 +46,7 @@ Trying it out
 
 This is a maven project, so the easiest way to try it out is:
 
-  git clone git://github.com/craigtaverner/amanzi-index.git
-  cd amanzi-index
-  mvn clean test
+    git clone git://github.com/craigtaverner/amanzi-index.git
+    cd amanzi-index
+    mvn clean test
 
