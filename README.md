@@ -33,10 +33,20 @@ Update: 19th Dec
 ----------------
 
 We added an initial implementation of an index tree with some test code to
-test that the tree actually get's built for a number of simple cases,
+check that the tree actually gets built for a number of simple cases,
 including at least one multi-property, multi-type case. However the there is
 no support for querying the index yet, no support for aggregations on the
 index and the test code is not complete enough to be sure the index tree is
 completely correct.
 
 This is made available on github only for people interested in following the development and commenting on the design.
+
+Trying it out
+-------------
+
+This is a maven project, so the easiest way to try it out is:
+
+  git clone git://github.com/craigtaverner/amanzi-index.git
+  cd amanzi-index
+  mvn clean test
+
