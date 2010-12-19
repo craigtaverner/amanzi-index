@@ -12,7 +12,7 @@ package org.amanzi.index.mappers;
 public class IntegerMapper extends NumberMapper<Integer> {
 
 	private IntegerMapper(int min, int max, int step) {
-		super(min, max, step);
+		super(min, max, step > 0 ? step : 1);
 	}
 
 	/**
@@ -53,7 +53,8 @@ public class IntegerMapper extends NumberMapper<Integer> {
 		return new IntegerMapper(min, max, (max - min) / categories);
 	}
 
-	public int toKey(Integer value) {
+	public int toKey(Object obj) {
+		Integer value = (Integer) obj;
 		min = Math.min(value, min);
 		max = Math.max(value, max);
 		int offset = value < origin ? -1 : 0;

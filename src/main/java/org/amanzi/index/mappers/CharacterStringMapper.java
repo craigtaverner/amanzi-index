@@ -54,33 +54,36 @@ public class CharacterStringMapper implements Mapper<String> {
 	 * is set to "A".
 	 */
 	public static CharacterStringMapper withDepth(int depth) {
-		return new CharacterStringMapper(DEFAULT_ORIGIN, depth, DEFAULT_ROOT,
-				DEFAULT_WIDTH);
+		return new CharacterStringMapper(DEFAULT_ORIGIN, null, null, depth, DEFAULT_ROOT, DEFAULT_WIDTH);
 	}
 
 	/**
 	 * Create a string mapper based on the provided origin and depth.
 	 */
 	public static CharacterStringMapper withOrigin(String origin, int depth) {
-		return new CharacterStringMapper(origin, depth, DEFAULT_ROOT,
-				DEFAULT_WIDTH);
+		return new CharacterStringMapper(origin, null, null, depth, DEFAULT_ROOT, DEFAULT_WIDTH);
+	}
+
+	/**
+	 * Create a string mapper based on the provided initial min, max and depth.
+	 */
+	public static CharacterStringMapper withMinMax(String min, String max, int depth) {
+		return new CharacterStringMapper(null, min, max, depth, DEFAULT_ROOT, DEFAULT_WIDTH);
 	}
 
 	/**
 	 * Create a string mapper based on the provided origin, depth, root and
 	 * width.
 	 */
-	public static CharacterStringMapper withConfig(String origin, int depth,
-			char root, int width) {
-		return new CharacterStringMapper(origin, depth, root, width);
+	public static CharacterStringMapper withConfig(String origin, int depth, char root, int width) {
+		return new CharacterStringMapper(origin, null, null, depth, root, width);
 	}
 
 	/**
 	 * Create a string mapper with the specified origin and a depth of 2.
 	 */
 	public static CharacterStringMapper withOrigin(String origin) {
-		return new CharacterStringMapper(origin, DEFAULT_DEPTH, DEFAULT_ROOT,
-				DEFAULT_WIDTH);
+		return new CharacterStringMapper(origin, null, null, DEFAULT_DEPTH, DEFAULT_ROOT, DEFAULT_WIDTH);
 	}
 
 	/**
@@ -88,8 +91,7 @@ public class CharacterStringMapper implements Mapper<String> {
 	 * prefix length plus 1.
 	 */
 	public static CharacterStringMapper withPrefix(String prefix) {
-		return new CharacterStringMapper(prefix, prefix.length() + 1,
-				DEFAULT_ROOT, DEFAULT_WIDTH);
+		return new CharacterStringMapper(prefix, null, null, prefix.length() + 1, DEFAULT_ROOT, DEFAULT_WIDTH);
 	}
 
 	/**
@@ -100,16 +102,14 @@ public class CharacterStringMapper implements Mapper<String> {
 	 */
 	public static CharacterStringMapper withSample(Collection<String> data) {
 		String prefix = findPrefix(data);
-		return new CharacterStringMapper(prefix, prefix.length() + 1,
-				DEFAULT_ROOT, DEFAULT_WIDTH);
+		return new CharacterStringMapper(prefix, null, null, prefix.length() + 1, DEFAULT_ROOT, DEFAULT_WIDTH);
 	}
 
 	/**
 	 * The default string mapper has origin "A" and depth 2.
 	 */
 	public static CharacterStringMapper getDefault() {
-		return new CharacterStringMapper(DEFAULT_ORIGIN, DEFAULT_DEPTH,
-				DEFAULT_ROOT, DEFAULT_WIDTH);
+		return new CharacterStringMapper(DEFAULT_ORIGIN, null, null, DEFAULT_DEPTH, DEFAULT_ROOT, DEFAULT_WIDTH);
 	}
 
 	/**
@@ -148,15 +148,15 @@ public class CharacterStringMapper implements Mapper<String> {
 	 * @param depth
 	 *            to use for deciding when to increment the key
 	 */
-	protected CharacterStringMapper(String origin, int depth, char root,
-			int width) {
+	protected CharacterStringMapper(String origin, String min, String max, int depth, char root, int width) {
+		if(origin == null) origin = average(min, max);
 		this.origin = origin;
 		while (this.origin.length() < depth)
 			this.origin += origin.substring(origin.length() - 1);
 		if (this.origin.length() > depth)
 			this.origin = this.origin.substring(0, depth);
-		this.min = origin;
-		this.max = origin;
+		this.min = (min == null) ? this.origin : min;
+		this.max = (max == null) ? this.origin : max;
 		this.depth = depth;
 		this.root = root;
 		this.width = width;
@@ -165,10 +165,8 @@ public class CharacterStringMapper implements Mapper<String> {
 			originChars[i] = limitChar(originChars[i]);
 		}
 		if (!String.valueOf(originChars).equals(this.origin)) {
-			throw new IllegalArgumentException("Origin '" + this.origin
-					+ "' out of range from root[" + root + "] and width="
-					+ width + ", try '" + String.valueOf(originChars)
-					+ "' instead.");
+			throw new IllegalArgumentException("Origin '" + this.origin + "' out of range from root[" + root + "] and width="
+					+ width + ", try '" + String.valueOf(originChars) + "' instead.");
 		}
 		this.toKey(this.origin);
 	}
@@ -187,8 +185,18 @@ public class CharacterStringMapper implements Mapper<String> {
 	 * string->key mapping, not the reverse for this class.
 	 */
 	public String getRangeText(int key) {
-		return "key[" + key + "] range[" + getMin(key) + "," + getMax(key)
-				+ "]";
+		return "key[" + key + "] range[" + getMin(key) + "," + getMax(key) + "]";
+	}
+
+	public String average(String a, String b) {
+		char[] ac = a.toCharArray();
+		char[] bc = b.toCharArray();
+		char[] ans = new char[Math.max(ac.length, bc.length)];
+		for (int i = 0; i < ans.length; i++) {
+			int x = (i < ac.length ? ac[i] : root) + (i < bc.length ? bc[i] : root);
+			ans[i] = (char) (x / 2);
+		}
+		return String.valueOf(ans);
 	}
 
 	public String getMin() {
@@ -201,6 +209,10 @@ public class CharacterStringMapper implements Mapper<String> {
 
 	public String getOrigin() {
 		return origin;
+	}
+
+	public int getDepth() {
+		return depth;
 	}
 
 	/** Get the minimum value for the specific index */
@@ -253,7 +265,8 @@ public class CharacterStringMapper implements Mapper<String> {
 	 * key. The algorithm is simple. k = SUM[i=0:depth]( (s[i] - o[i]) * width^i
 	 * ). So for i=0, we have simply k = s - o, but for i=1
 	 */
-	public int toKey(String value) {
+	public int toKey(Object obj) {
+		String value = (String) obj;
 		min = value.compareTo(min) < 0 ? value : min;
 		max = value.compareTo(max) > 0 ? value : max;
 		return (int) calcKey(value);
@@ -289,7 +302,18 @@ public class CharacterStringMapper implements Mapper<String> {
 		return key;
 	}
 
+	/**
+	 * Return the number of categories, or possible unique nodes at level 0. For
+	 * this index it is always the depth * width. This means for depth 1
+	 * indexes, which differentiate only on the first character, the default
+	 * width is 94 (or the gap from ' ' to '~') leading to exactly 94
+	 * categories. If we move to depth 2, there are 94*94 (or 94^2 = 8836)
+	 * categories, which is the default for this mapper. If this mapper is then
+	 * used in a step 10 index tree, there will be up to 4 levels to deal with
+	 * all possible combinations.
+	 */
 	public int getCategories() {
-		return toKey(max) - toKey(min);
+		return (int) Math.pow(width, depth);
 	}
+
 }

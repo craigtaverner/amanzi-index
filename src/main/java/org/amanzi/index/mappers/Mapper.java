@@ -1,9 +1,9 @@
 package org.amanzi.index.mappers;
 
-public interface Mapper<T> {
+public interface Mapper<T extends Object> {
 
 	/** Main active method for mapping, convert the mapped type into a index key */
-	public int toKey(T value);
+	public int toKey(Object object);
 
 	/** Get the current known minimum of mapped data */
 	public T getMin();

@@ -7,6 +7,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import junit.framework.TestCase;
+
 import org.amanzi.index.mappers.CharacterStringMapper;
 import org.amanzi.index.mappers.FloatMapper;
 import org.amanzi.index.mappers.IntegerMapper;
@@ -14,7 +16,7 @@ import org.amanzi.index.mappers.Mapper;
 import org.amanzi.index.mappers.NumberMapper;
 import org.junit.Test;
 
-public class TestIndex extends Neo4jTestCase {
+public class TestMappers extends TestCase {
 
 	class MapperResults<T extends Comparable<T>> {
 		HashMap<Integer, ArrayList<T>> results = new HashMap<Integer, ArrayList<T>>();
@@ -375,10 +377,6 @@ public class TestIndex extends Neo4jTestCase {
 			assertEquals("Late samples should be in light index", 1,
 					result.size());
 		}
-	}
-
-	@Test
-	public void testInsert() throws Exception {
 	}
 
 }
