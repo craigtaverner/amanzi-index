@@ -1,7 +1,6 @@
 package org.amanzi.index.config;
 
 import java.util.Collection;
-import java.util.Map;
 
 import org.neo4j.graphdb.Node;
 

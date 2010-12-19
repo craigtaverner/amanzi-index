@@ -1,7 +1,6 @@
 package org.amanzi.index.config;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -9,7 +8,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.amanzi.index.AmanziIndexRelationshipTypes;
-import org.amanzi.index.mappers.CharacterStringMapper;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;

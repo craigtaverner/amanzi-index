@@ -2,7 +2,6 @@ package org.amanzi.index;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Map;
 
 import org.amanzi.index.config.DefaultIndexConfig;
@@ -18,7 +17,6 @@ import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.index.IndexHits;
-import static org.amanzi.index.util.IndexUtilities.arrayString;
 
 class AmanziIndex implements PreparedIndex<Node> {
 	private GraphDatabaseService db;
