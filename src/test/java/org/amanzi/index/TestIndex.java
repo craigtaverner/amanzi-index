@@ -18,6 +18,7 @@ import org.junit.Test;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Transaction;
+import org.neo4j.graphdb.index.IndexHits;
 
 public class TestIndex extends Neo4jTestCase {
 	private abstract class PropertyGenerator<T extends Object> extends DefaultPropertyConfig<T> {
@@ -108,10 +109,12 @@ public class TestIndex extends Neo4jTestCase {
 
 	@Test
 	public void testInsertSimple1D_100() throws Exception {
-		doInsertSimple1D(0, 100, 5);
+		String name = doInsertSimple1D(0, 100, 5);
+		doSearchIndex(name, "simple >= 5 and simple < 20 or simple == 45", "simple", new Integer[] { 5, 10, 15, 45 });
 	}
 
-	private void doInsertSimple1D(int min, int max, int step) throws Exception {
+	private String doInsertSimple1D(int min, int max, int step) throws Exception {
+		String indexName = "Test Index 1D Integer[" + min + "," + max + "," + step + "]";
 		int average = (max + min) / 2;
 		final ArrayList<PropertyConfig<?>> properties = new ArrayList<PropertyConfig<?>>();
 		properties.add(DefaultPropertyConfig.makeIntegerConfig("simple", min, max));
@@ -119,7 +122,7 @@ public class TestIndex extends Neo4jTestCase {
 		Transaction tx = graphDb().beginTx();
 		try {
 			IndexConfig config = new DefaultIndexConfig(10, properties);
-			AmanziIndex index = new AmanziIndex("Test Index", graphDb(), config);
+			AmanziIndex index = new AmanziIndex(indexName, graphDb(), config);
 			System.out.println("Creating simple set of ordered integers:");
 			for (int i = min; i <= max; i += step) {
 				Node node = this.graphDb().createNode();
@@ -139,7 +142,39 @@ public class TestIndex extends Neo4jTestCase {
 		}
 		assertEquals("Expected first property to have config max " + max, max, properties.get(0).getMax());
 		assertEquals("Expected first property to have mapper max " + max, max, properties.get(0).getMapper().getMax());
-		debugIndex("Test Index 1D Integer[" + min + "," + max + "," + step + "]");
+		debugIndex(indexName);
+		return indexName;
+	}
+
+	private void doSearchIndex(String name, String query, String propertyToAssert, Object[] expectedResults) {
+		ArrayList<Object> results = new ArrayList<Object>();
+		AmanziIndex index = new AmanziIndex(name, graphDb());
+		IndexHits<Node> hits = index.query(query);
+		System.out.println("Got " + hits.size() + " results querying '" + name + "': " + query);
+		for (Node node : hits) {
+			if (propertyToAssert != null)
+				System.out.println("\t" + node + "\t" + node.getProperty(propertyToAssert, null));
+			else
+				System.out.println("\t" + node);
+			if (propertyToAssert != null) {
+				Object result = node.getProperty(propertyToAssert, null);
+				assertNotNull("Unexpected null for " + node + " property '" + propertyToAssert + "'", result);
+				results.add(result);
+			}
+		}
+		if (expectedResults.length > 0) {
+			assertEquals("Incorrect result length for query[" + query + "]", expectedResults.length, results.size());
+			for (Object expected : expectedResults) {
+				Object found = null;
+				for (Object result : results) {
+					if (result.equals(expected)) {
+						found = result;
+						break;
+					}
+				}
+				assertNotNull("Failed to find " + expected + " in the results for query[" + query + "]", found);
+			}
+		}
 	}
 
 	@Test
@@ -154,10 +189,14 @@ public class TestIndex extends Neo4jTestCase {
 
 	@Test
 	public void testInsertSimple1DString_2x13() throws Exception {
-		doInsertSimple1DString("A", "Z", 13, 2);
+		String name = doInsertSimple1DString("A", "Z", 13, 2);
+		doSearchIndex(name, "simple == AA or simple == NN", "simple", new String[] { "AA", "NN" });
+		// doSearchIndex(name, "simple == A or simple > C and simple <= E",
+		// "simple", new String[] { "A", "D", "E" });
 	}
 
-	private void doInsertSimple1DString(String min, String max, int step, int depth) throws Exception {
+	private String doInsertSimple1DString(String min, String max, int step, int depth) throws Exception {
+		String indexName = "Test Index 1D String[" + min + "," + max + "," + step + "," + depth + "]";
 		int minc = min.charAt(0);
 		int maxc = max.charAt(0);
 		int average = (maxc + minc) / 2;
@@ -168,7 +207,7 @@ public class TestIndex extends Neo4jTestCase {
 		Transaction tx = graphDb().beginTx();
 		try {
 			IndexConfig config = new DefaultIndexConfig(10, properties);
-			AmanziIndex index = new AmanziIndex("Test Index", graphDb(), config);
+			AmanziIndex index = new AmanziIndex(indexName, graphDb(), config);
 			System.out.println("Creating simple set of ordered integers:");
 			for (int i = minc, p = minc; i <= maxc; i += step, p += step) {
 				char[] value = Arrays.copyOf(((String) (properties.get(0).getMapper().getOrigin())).toCharArray(), depth);
@@ -185,7 +224,7 @@ public class TestIndex extends Neo4jTestCase {
 					System.out.println("\t" + p + " -> " + arrayString(keys));
 					if (d == 0) {
 						assertEquals("Expected index key to be the value " + p + " minus the average value " + average, "["
-								+ (p - average) * (int)Math.pow(94, depth - 1) + "]", keyString);
+								+ (p - average) * (int) Math.pow(94, depth - 1) + "]", keyString);
 					}
 				}
 			}
@@ -196,11 +235,13 @@ public class TestIndex extends Neo4jTestCase {
 		}
 		assertEquals("Expected first property to have config max " + max, max, properties.get(0).getMax());
 		assertEquals("Expected first property to have mapper max " + max, max, properties.get(0).getMapper().getMax());
-		debugIndex("Test Index 1D String[" + min + "," + max + "," + step + "," + depth + "]");
+		debugIndex(indexName);
+		return indexName;
 	}
 
 	@Test
 	public void testInsert2D() throws Exception {
+		String indexName = "TestIndex";
 		final ArrayList<PropertyConfig<?>> properties = new ArrayList<PropertyConfig<?>>();
 		properties.add(new StringPropertyGenerator("name", new Random(0), "A", "Z"));
 		properties.add(new IntegerPropertyGenerator("an integer value", new Random(0), -150, -15));
@@ -209,7 +250,7 @@ public class TestIndex extends Neo4jTestCase {
 		Transaction tx = graphDb().beginTx();
 		try {
 			IndexConfig config = new DefaultIndexConfig(10, properties);
-			AmanziIndex index = new AmanziIndex("Test Index", graphDb(), config);
+			AmanziIndex index = new AmanziIndex(indexName, graphDb(), config);
 			for (int i = 0; i < 10; i++) {
 				Node node = this.graphDb().createNode();
 				for (PropertyConfig<?> property : properties) {
@@ -226,12 +267,12 @@ public class TestIndex extends Neo4jTestCase {
 		} finally {
 			tx.finish();
 		}
-		debugIndex("Test Index");
+		debugIndex(indexName);
 	}
 
 	private void debugIndex(String indexName) {
 		AmanziIndex index = new AmanziIndex(indexName, graphDb());
-		index.debug();
+		index.debug(System.out);
 	}
 
 	@Test

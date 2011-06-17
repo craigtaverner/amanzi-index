@@ -272,6 +272,16 @@ public class CharacterStringMapper implements Mapper<String> {
 		return (int) calcKey(value);
 	}
 
+	/** Return the text without any changes */
+	public String parse(String text) {
+		return text;
+	}
+
+	@Override
+	public int compare(Object a, Object b) {
+		return a.toString().compareTo(b.toString());
+	}
+
 	/**
 	 * Even thought the point of the index is to allow for a small range of key
 	 * values, and int (or even short) should be fine, and the API specifies

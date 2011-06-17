@@ -16,6 +16,7 @@ import org.neo4j.graphdb.Transaction;
 public class DefaultIndexConfig implements IndexConfig {
 	private IntegerStepper stepper;
 	private HashMap<String, PropertyConfig<?>> properties;
+	private HashMap<String, Integer> propertyPositions;
 	private Node configNode;
 
 	/**
@@ -116,6 +117,19 @@ public class DefaultIndexConfig implements IndexConfig {
 	}
 
 	@Override
+	public int getPropertyPosition(String property) {
+		if (propertyPositions == null) {
+			propertyPositions = new HashMap<String, Integer>();
+			int position = 0;
+			for (PropertyConfig<?> propertyConfig : properties.values()) {
+				propertyPositions.put(propertyConfig.getName(), position);
+				position++;
+			}
+		}
+		return propertyPositions.get(property);
+	}
+
+	@Override
 	public int size() {
 		return properties.size();
 	}
@@ -131,12 +145,23 @@ public class DefaultIndexConfig implements IndexConfig {
 	}
 
 	@Override
+	public int keyFor(int keys, int level) {
+		return stepper.indexOf(keys, 0, stepSize(level));
+	}
+
+	@Override
 	public int[] keysFor(int[] keys, int level) {
 		int[] newKeys = new int[keys.length];
 		for (int i = 0; i < keys.length; i++) {
 			newKeys[i] = stepper.indexOf(keys[i], 0, stepSize(level));
 		}
 		return newKeys;
+	}
+
+	@Override
+	public int[] valuesFor(int[] keys, int level) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

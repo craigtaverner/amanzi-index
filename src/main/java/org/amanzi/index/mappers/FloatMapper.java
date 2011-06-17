@@ -60,8 +60,17 @@ public class FloatMapper extends NumberMapper<Float> {
 		return (int) ((value - origin - offset) / step + offset);
 	}
 
+	public Float parse(String text) {
+		return Float.parseFloat(text);
+	}
+
 	public int getCategories() {
 		return (int) ((max - min) / step);
+	}
+
+	@Override
+	public int compare(Object a, Object b) {
+		return ((Float)a).compareTo((Float)b);
 	}
 
 	public String toString() {

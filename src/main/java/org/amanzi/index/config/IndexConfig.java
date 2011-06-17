@@ -18,14 +18,23 @@ public interface IndexConfig {
 	/** @return a collection of property configurations */
 	public Collection<PropertyConfig<?>> getProperties();
 
-	//public Collection<String> getProperties(Class<?> type);
+	/** Return the configuration of the named property */
 	public PropertyConfig<?> getProperty(String property);
-	
+
+	/** Return the position in the index array for the named property */
+	int getPropertyPosition(String property);
+
 	/** The number of properties supported by this index */
 	public int size();
 
+	/** Convert level 0 key to key at another level */
+	int keyFor(int keys, int level);
+
 	/** Convert level 0 keys to keys at any other level */
 	public int[] keysFor(int[] keys, int level);
+	
+	/** Convert keys at some level to level 0 keys */
+	public int[] valuesFor(int[] keys, int level);
 	
 	public void save(Node indexNode);
 }

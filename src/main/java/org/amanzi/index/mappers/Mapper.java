@@ -20,4 +20,10 @@ public interface Mapper<T extends Object> {
 	/** Provide a description of the values represented by the index key */
 	public String getRangeText(int key);
 
+	/** Convert a text string value into the native value */
+	public T parse(String text);
+
+	/** Compare two objects of the specified type */
+	public int compare(Object value, Object val);
+
 }

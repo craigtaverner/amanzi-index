@@ -61,6 +61,15 @@ public class IntegerMapper extends NumberMapper<Integer> {
 		return (value - origin - offset) / step + offset;
 	}
 
+	public Integer parse(String text) {
+		return Integer.parseInt(text);
+	}
+
+	@Override
+	public int compare(Object a, Object b) {
+		return ((Integer)a).compareTo((Integer)b);
+	}
+
 	public int getCategories() {
 		return (max - min) / step;
 	}
@@ -82,4 +91,5 @@ public class IntegerMapper extends NumberMapper<Integer> {
 	protected Integer average(Integer a, Integer b) {
 		return (a + b) / 2;
 	}
+
 }

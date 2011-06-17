@@ -74,15 +74,11 @@ public class IndexLevel {
 	 * @param indexNode
 	 * @throws IOException
 	 */
-	private IndexLevel(int level, IndexConfig config, Node indexNode) throws IOException {
-		this.level = level;
+	public IndexLevel(IndexConfig config, Node indexNode) {
 		this.config = config;
-		this.indices = (int[]) indexNode.getProperty("index");
 		this.indexNode = indexNode;
-		Integer indexLevel = (Integer) indexNode.getProperty("level", null);
-		if (this.getLevel() != indexLevel) {
-			throw new IllegalArgumentException("Invalid index node passed for level: " + this.getLevel() + " != " + indexLevel);
-		}
+		this.indices = (int[]) indexNode.getProperty("index");
+		this.level = (Integer) indexNode.getProperty("level");
 	}
 
 	public IndexLevel setKeys(IndexLevel parentLevel, int[] newVals) throws IOException {
@@ -140,6 +136,14 @@ public class IndexLevel {
 		return level;
 	}
 
+	public boolean isOrigin() {
+		for (int key : indices) {
+			if (key != 0)
+				return false;
+		}
+		return true;
+	}
+
 	public boolean includes(int[] newVals) {
 		// TODO: Optimize by exiting the loop on first element mismatch
 		int[] newIndices = config.keysFor(newVals, level);
@@ -152,6 +156,35 @@ public class IndexLevel {
 
 	public int[] getValues() {
 		return values;
+	}
+
+	public String toString() {
+		StringBuffer it = new StringBuffer();
+		for (int key : indices) {
+			if (it.length() > 0)
+				it.append(", ");
+			it.append(key);
+		}
+		return "IndexLevel[" + level + "]: " + it;
+	}
+
+	public void buildIndexFilter(int[] min, int[] max, String propertyName, Object minValue, Object maxValue) {
+		if (minValue != null || maxValue != null) {
+			PropertyConfig<?> property = config.getProperty(propertyName);
+			int position = config.getPropertyPosition(propertyName);
+			if (minValue != null) {
+				int key = property.getMapper().toKey(minValue);
+				int index = config.keyFor(key, level);
+				if (index < min[position])
+					min[position] = index;
+			}
+			if (maxValue != null) {
+				int key = property.getMapper().toKey(maxValue);
+				int index = config.keyFor(key, level);
+				if (index > max[position])
+					max[position] = index;
+			}
+		}
 	}
 
 }
