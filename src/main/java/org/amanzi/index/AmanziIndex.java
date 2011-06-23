@@ -139,23 +139,39 @@ class AmanziIndex implements PreparedIndex<Node> {
 		 * The 'and' filter should create the most restrictive ranges
 		 */
 		public void buildIndexFilter(IndexLevel level, int min[], int max[]) {
+			int[] xmin = new int[min.length];
+			int[] xmax = new int[max.length];
+			Arrays.fill(xmin, Integer.MAX_VALUE);
+			Arrays.fill(xmax, Integer.MIN_VALUE);
 			for (QueryCondition condition : conditions) {
-				int[] tmin = Arrays.copyOf(min, min.length);
-				int[] tmax = Arrays.copyOf(max, max.length);
+				int[] tmin = new int[min.length];
+				int[] tmax = new int[max.length];
+				Arrays.fill(tmin, Integer.MAX_VALUE);
+				Arrays.fill(tmax, Integer.MIN_VALUE);
 				condition.buildIndexFilter(level, tmin, tmax);
-				for (int i = 0; i < min.length; i++) {
-					if (min[i] == Integer.MAX_VALUE) {
-						min[i] = tmin[i];
-					} else {
-						min[i] = Math.max(min[i], tmin[i]);
-					}
+				maxOf(xmin, tmin);
+				minOf(xmax, tmax);
+			}
+			minOf(min, xmin);
+			maxOf(max, xmax);
+		}
+
+		private void minOf(int[] max, int[] tmax) {
+			for (int i = 0; i < max.length; i++) {
+				if (max[i] == Integer.MIN_VALUE) {
+					max[i] = tmax[i];
+				} else if (tmax[i] != Integer.MIN_VALUE) {
+					max[i] = Math.min(max[i], tmax[i]);
 				}
-				for (int i = 0; i < max.length; i++) {
-					if (max[i] == Integer.MIN_VALUE) {
-						max[i] = tmax[i];
-					} else {
-						max[i] = Math.min(max[i], tmax[i]);
-					}
+			}
+		}
+
+		private void maxOf(int[] min, int[] tmin) {
+			for (int i = 0; i < min.length; i++) {
+				if (min[i] == Integer.MAX_VALUE) {
+					min[i] = tmin[i];
+				} else if (tmin[i] != Integer.MAX_VALUE) {
+					min[i] = Math.max(min[i], tmin[i]);
 				}
 			}
 		}
@@ -224,7 +240,7 @@ class AmanziIndex implements PreparedIndex<Node> {
 		public void buildIndexFilter(IndexLevel level, int min[], int max[]) {
 			if (comparisonDescription.contains("<")) {
 				level.buildIndexFilter(min, max, property, null, value);
-			} else if(comparisonDescription.contains(">")){
+			} else if (comparisonDescription.contains(">")) {
 				level.buildIndexFilter(min, max, property, value, null);
 			} else {
 				level.buildIndexFilter(min, max, property, value, value);
@@ -500,10 +516,8 @@ class AmanziIndex implements PreparedIndex<Node> {
 			for (IndexLevel level : levels) {
 				int[] min = new int[config.size()];
 				int[] max = new int[config.size()];
-				for (int i = 0; i < min.length; i++) {
-					min[i] = Integer.MAX_VALUE;
-					max[i] = Integer.MIN_VALUE;
-				}
+				Arrays.fill(min, Integer.MAX_VALUE);
+				Arrays.fill(max, Integer.MIN_VALUE);
 				// Convert the query into a set of min/max ranges
 				query.buildIndexFilter(level, min, max);
 				// Remove any conditions not specified
@@ -519,12 +533,27 @@ class AmanziIndex implements PreparedIndex<Node> {
 		}
 
 		private void debugNode(Node node) {
-
+			if (node.hasProperty("index")) {
+				int[] index = (int[]) node.getProperty("index", null);
+				Integer level = (Integer) node.getProperty("level", null);
+				System.out.println("Searching index node: level[" + level + "], index[" + Arrays.toString(index) + "]");
+			} else {
+				StringBuffer sb = new StringBuffer();
+				for (String p : node.getPropertyKeys()) {
+					if (sb.length() > 0)
+						sb.append(", ");
+					try {
+						sb.append(p).append("='").append(node.getProperty(p).toString()).append("'");
+					} catch (Exception e) {
+					}
+				}
+				System.out.println("Searching data node: " + node + " (" + sb + ")");
+			}
+			System.out.println("\tGot results: nodeIsIndex[" + nodeIsIndex + "], nodeInRange[" + nodeInRange + "]");
 		}
 
 		private void setTestNode(Node node) {
 			if (node != currentNode) {
-				debugNode(node);
 				currentNode = node;
 				countNodes++;
 				int[] index = (int[]) node.getProperty("index", null);
@@ -560,7 +589,7 @@ class AmanziIndex implements PreparedIndex<Node> {
 						}
 					}
 				}
-
+				debugNode(node);
 			}
 		}
 

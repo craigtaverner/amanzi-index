@@ -191,8 +191,13 @@ public class TestIndex extends Neo4jTestCase {
 	public void testInsertSimple1DString_2x13() throws Exception {
 		String name = doInsertSimple1DString("A", "Z", 13, 2);
 		doSearchIndex(name, "simple == AA or simple == NN", "simple", new String[] { "AA", "NN" });
-		// doSearchIndex(name, "simple == A or simple > C and simple <= E",
-		// "simple", new String[] { "A", "D", "E" });
+	}
+
+	@Test
+	public void testInsertSimple1DString_2x5() throws Exception {
+		String name = doInsertSimple1DString("A", "Z", 5, 2);
+		doSearchIndex(name, "simple == AA or simple == NN", "simple", new String[] { "AA" });
+		doSearchIndex(name, "simple == AA or simple > CA and simple <= GA", "simple", new String[] {"AA", "FM", "FF"});
 	}
 
 	private String doInsertSimple1DString(String min, String max, int step, int depth) throws Exception {
@@ -208,7 +213,7 @@ public class TestIndex extends Neo4jTestCase {
 		try {
 			IndexConfig config = new DefaultIndexConfig(10, properties);
 			AmanziIndex index = new AmanziIndex(indexName, graphDb(), config);
-			System.out.println("Creating simple set of ordered integers:");
+			System.out.println("Creating simple set of ordered strings:");
 			for (int i = minc, p = minc; i <= maxc; i += step, p += step) {
 				char[] value = Arrays.copyOf(((String) (properties.get(0).getMapper().getOrigin())).toCharArray(), depth);
 				for (int d = 0; d < depth; d++) {
@@ -221,7 +226,7 @@ public class TestIndex extends Neo4jTestCase {
 					int[] keys = (int[]) node.getSingleRelationship(AmanziIndexRelationshipTypes.INDEX_LEAF, Direction.INCOMING)
 							.getStartNode().getProperty("index");
 					String keyString = arrayString(keys);
-					System.out.println("\t" + p + " -> " + arrayString(keys));
+					System.out.println("\t" + String.valueOf(value) + " -> " + arrayString(keys));
 					if (d == 0) {
 						assertEquals("Expected index key to be the value " + p + " minus the average value " + average, "["
 								+ (p - average) * (int) Math.pow(94, depth - 1) + "]", keyString);
@@ -234,7 +239,7 @@ public class TestIndex extends Neo4jTestCase {
 			tx.finish();
 		}
 		assertEquals("Expected first property to have config max " + max, max, properties.get(0).getMax());
-		assertEquals("Expected first property to have mapper max " + max, max, properties.get(0).getMapper().getMax());
+		assertEquals("Expected first property to have mapper max " + max, max.charAt(0), properties.get(0).getMapper().getMax().toString().charAt(0));
 		debugIndex(indexName);
 		return indexName;
 	}
