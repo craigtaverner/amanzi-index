@@ -97,14 +97,24 @@
     <plugins>
       <plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
-            <configuration>
-            <groups>
-              <group>
-                <title>Composite Indexing</title>
-                <packages>org.amanzi.index:org.amanzi.index.*</packages>
-              </group>
-            </groups>
-            </configuration>
+        <configuration>
+          <groups>
+            <group>
+              <title>Composite Indexing</title>
+              <packages>org.amanzi.index:org.amanzi.index.*</packages>
+            </group>
+          </groups>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <forkMode>pertest</forkMode>
+          <argLine>-Xms128m -Xmx2048m -XX:MaxPermSize=512m</argLine>
+          <testFailureIgnore>false</testFailureIgnore>
+          <skip>false</skip>
+        </configuration>
       </plugin>
     </plugins>
   </reporting>

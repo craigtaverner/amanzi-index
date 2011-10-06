@@ -9,10 +9,13 @@ import org.amanzi.index.config.DefaultIndexConfig;
 import org.amanzi.index.config.DefaultPropertyConfig;
 import org.amanzi.index.config.IndexConfig;
 import org.amanzi.index.config.PropertyConfig;
+import org.amanzi.index.loader.BigTextFileLoader;
 import org.amanzi.index.mappers.CharacterStringMapper;
 import org.amanzi.index.mappers.FloatMapper;
 import org.amanzi.index.mappers.IntegerMapper;
 import org.amanzi.index.mappers.Mapper;
+import org.amanzi.index.util.FileUtilities;
+
 import static org.amanzi.index.util.IndexUtilities.arrayString;
 import org.junit.Test;
 import org.neo4j.graphdb.Direction;
@@ -99,6 +102,39 @@ public class TestIndex extends Neo4jTestCase {
 		public String getTypeName() {
 			return "float";
 		}
+
+	}
+	
+	@Test
+	public void testFileLoader() {
+		System.out.println("Loading file: test.txt");
+		BigTextFileLoader file = new BigTextFileLoader("test.txt");
+		int lineCount = 0;
+		String delimiter;
+		for (String line : file) {
+			if (lineCount == 0) {
+				delimiter = FileUtilities.getDelimiter(line);
+				System.out.println("Line Delimiter: [" + delimiter + "]"
+						+ "\nFile Header: [" + line + "]");
+			}
+		    lineCount ++;
+		}
+		System.out.println("Text file=>" + file.getFileName() + "@" 
+				+ file.getFileSize() / 1024 + "KB: " + lineCount + " lines readed.");
+
+		System.out.println("Loading file: test.zip");
+		file = new BigTextFileLoader("test.zip");
+		lineCount = 0;
+		for (String line : file) {
+			if (lineCount == 0) {
+				delimiter = FileUtilities.getDelimiter(line);
+				System.out.println("Line Delimiter: [" + delimiter + "]"
+						+ "\nFile Header: [" + line + "]");
+			}
+		    lineCount ++;
+		}
+		System.out.println("Zip file=>" + file.getFileName() + "@" 
+				+ file.getFileSize() / 1024 + "KB: " + lineCount + " lines readed.");
 
 	}
 

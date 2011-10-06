@@ -11,7 +11,6 @@ import org.amanzi.index.config.DefaultIndexConfig;
 import org.amanzi.index.config.IndexConfig;
 import org.amanzi.index.config.IndexLevel;
 import org.amanzi.index.config.PropertyConfig;
-import org.amanzi.index.legacy.MultiPropertyIndex;
 import org.amanzi.index.mappers.Mapper;
 import static org.amanzi.index.util.IndexUtilities.arrayString;
 import org.neo4j.graphdb.Direction;
