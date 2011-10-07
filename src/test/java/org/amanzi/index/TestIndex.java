@@ -53,7 +53,7 @@ public class TestIndex extends Neo4jTestCase {
 		}
 
 		public Mapper<String> makeMapper() {
-			return CharacterStringMapper.getDefault();
+			return CharacterStringMapper.withMinMax(min, max, CharacterStringMapper.DEFAULT_DEPTH);
 		}
 
 		@Override

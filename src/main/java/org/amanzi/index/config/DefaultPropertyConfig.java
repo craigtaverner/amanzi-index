@@ -1,5 +1,7 @@
 package org.amanzi.index.config;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -7,7 +9,10 @@ import java.util.Map;
 import org.amanzi.index.mappers.CharacterStringMapper;
 import org.amanzi.index.mappers.FloatMapper;
 import org.amanzi.index.mappers.IntegerMapper;
+import org.amanzi.index.mappers.ListStringMapper;
+import org.amanzi.index.mappers.LongMapper;
 import org.amanzi.index.mappers.Mapper;
+import org.amanzi.index.util.CollectionUtilities;
 import org.neo4j.graphdb.Node;
 
 /**
@@ -61,10 +66,15 @@ public abstract class DefaultPropertyConfig<T extends Object> implements Propert
 		props.put("name", getName());
 		props.put("min", getMin());
 		props.put("max", getMax());
-		props.put("categories", getMapper().getCategories());
-		if (getTypeName().equalsIgnoreCase("string")) {
+		int categories = getMapper().getCategories();
+		props.put("categories", categories);
+		if (categories < 0 && getTypeName().equalsIgnoreCase("long")) {
+			props.put("step", ((LongMapper) getMapper()).getStep());
+		} else if (getTypeName().equalsIgnoreCase("string")) {
 			props.put("depth", ((CharacterStringMapper) getMapper()).getDepth());
-		}
+		} else if (getTypeName().equals("listString")) {
+			props.put("gap", ((ListStringMapper) getMapper()).getGap());
+		} 
 		return props;
 	}
 
@@ -82,6 +92,39 @@ public abstract class DefaultPropertyConfig<T extends Object> implements Propert
 			@Override
 			public String getTypeName() {
 				return "string";
+			}
+		};
+	}
+	
+	public static DefaultPropertyConfig<String> makeListStringConfig(String name, Collection<String> data) {
+		return makeListStringConfig(name, data, ListStringMapper.DEFAULT_GAP);
+	}
+
+	public static DefaultPropertyConfig<String> makeListStringConfig(String name, final Collection<String> data, final int gap) {
+		return new DefaultPropertyConfig<String>(name, "", "") {
+			@Override
+			public Mapper<String> makeMapper() {
+				return ListStringMapper.withSampleGap(data, gap);
+			}
+
+			@Override
+			public String getTypeName() {
+				return "listString";
+			}
+		};
+	}
+	
+	public static DefaultPropertyConfig<String> makeListStringConfig(String name, final HashMap<Integer, String> map1, 
+			final HashMap<Integer, ArrayList<String>> map2, final int[] count, final int gap) {
+		return new DefaultPropertyConfig<String>(name, "", "") {
+			@Override
+			public Mapper<String> makeMapper() {
+				return ListStringMapper.withRestoreGap(map1, map2, count, gap);
+			}
+
+			@Override
+			public String getTypeName() {
+				return "listString";
 			}
 		};
 	}
@@ -103,6 +146,26 @@ public abstract class DefaultPropertyConfig<T extends Object> implements Propert
 			}
 		};
 	}
+	
+	public static DefaultPropertyConfig<Long> makeLongConfig(String name, long min, long max) {
+		return makeLongConfig(name, min, max, 1000);
+	}
+
+	public static DefaultPropertyConfig<Long> makeLongConfig(String name, long min, long max, final long step) {
+		return new DefaultPropertyConfig<Long>(name, min, max) {
+			@Override
+			public Mapper<Long> makeMapper() {
+				// For LongMapper, use step instead of categories 
+				return LongMapper.withRangeAndStep(min, max, step);
+			}
+
+			@Override
+			public String getTypeName() {
+				return "long";
+			}
+		};
+	}
+
 
 	public static DefaultPropertyConfig<Float> makeFloatConfig(String name, float min, float max) {
 		return makeFloatConfig(name, min, max, 100);
@@ -129,13 +192,24 @@ public abstract class DefaultPropertyConfig<T extends Object> implements Propert
 			Object min = node.getProperty("min");
 			Object max = node.getProperty("max");
 			Object categories = node.getProperty("categories", 100);
-			Object depth = node.getProperty("depth", CharacterStringMapper.DEFAULT_DEPTH);
 			if ("string".equalsIgnoreCase(type)) {
+				Object depth = node.getProperty("depth", CharacterStringMapper.DEFAULT_DEPTH);
 				return makeStringConfig(name, (String) min, (String) max, (Integer) depth);
+			} else if ("listString".equalsIgnoreCase(type)) {
+				Object gap = node.getProperty("gap", ListStringMapper.DEFAULT_GAP);
+				HashMap<Integer, String> keyList = CollectionUtilities.StringToHashMap(
+						(String) node.getProperty("keys"));
+				HashMap<Integer, ArrayList<String>> extraKeyList = CollectionUtilities.StringToHashMapExtra(
+						(String) node.getProperty("extraKeys"));
+				int[] counter = CollectionUtilities.StringtoIntArray((String) node.getProperty("counter"));
+				return makeListStringConfig(name, keyList, extraKeyList, counter, (Integer) gap);
 			} else if ("integer".equalsIgnoreCase(type)) {
 				return makeIntegerConfig(name, (Integer) min, (Integer) max, (Integer) categories);
 			} else if ("float".equalsIgnoreCase(type)) {
 				return makeFloatConfig(name, (Float) min, (Float) max, (Integer) categories);
+			} else if ("long".equalsIgnoreCase(type)) {
+				Object step = node.getProperty("step", 1000);
+				return makeLongConfig(name, (Long) min, (Long) max, (Long) step);
 			}
 		}
 		return null;

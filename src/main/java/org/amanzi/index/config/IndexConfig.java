@@ -37,4 +37,6 @@ public interface IndexConfig {
 	public int[] valuesFor(int[] keys, int level);
 	
 	public void save(Node indexNode);
+	
+	public void update(Node indexNode);
 }

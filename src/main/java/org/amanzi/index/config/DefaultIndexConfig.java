@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.amanzi.index.AmanziIndexRelationshipTypes;
+import org.amanzi.index.mappers.ListStringMapper;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
@@ -99,6 +100,28 @@ public class DefaultIndexConfig implements IndexConfig {
 				Relationship rel = configNode.createRelationshipTo(propNode, AmanziIndexRelationshipTypes.INDEX_CONFIG);
 				rel.setProperty("order", order);
 				order++;
+			}
+			tx.success();
+		} finally {
+			tx.finish();
+		}
+	}
+	
+	// FIXME: KK
+	public void update(Node indexNode) {
+		Transaction tx = indexNode.getGraphDatabase().beginTx();
+		try {
+			if (configNode != null) {
+				for (Relationship rel : configNode.getRelationships(AmanziIndexRelationshipTypes.INDEX_CONFIG, Direction.OUTGOING)) {
+					Node propNode = rel.getEndNode();
+					if (propNode.getProperty("property_type").equals("listString")) {
+						PropertyConfig<?> property = getProperty((String)propNode.getProperty("name"));
+						ListStringMapper mapper = (ListStringMapper) property.getMapper();
+						propNode.setProperty("keys", mapper.getKeyListString());
+						propNode.setProperty("extraKeys", mapper.getExtraKeyListString());
+						propNode.setProperty("counter", mapper.getCounterString());
+					}
+				}
 			}
 			tx.success();
 		} finally {

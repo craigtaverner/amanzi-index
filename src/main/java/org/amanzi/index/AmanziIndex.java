@@ -11,6 +11,7 @@ import org.amanzi.index.config.DefaultIndexConfig;
 import org.amanzi.index.config.IndexConfig;
 import org.amanzi.index.config.IndexLevel;
 import org.amanzi.index.config.PropertyConfig;
+//import org.amanzi.index.legacy.MultiPropertyIndex;
 import org.amanzi.index.mappers.Mapper;
 import static org.amanzi.index.util.IndexUtilities.arrayString;
 import org.neo4j.graphdb.Direction;
@@ -669,7 +670,8 @@ class AmanziIndex implements PreparedIndex<Node> {
 				int key = mapper.toKey(node.getProperty(property.getName()));
 				keys[i] = key;
 			} else {
-				System.err.println("Did not find property '" + propName + "' in node: " + node);
+				// FIXME: temp commented
+				//System.err.println("Did not find property '" + propName + "' in node: " + node);
 				keys[i] = NO_PROPERTY;
 			}
 			i++;
@@ -684,7 +686,7 @@ class AmanziIndex implements PreparedIndex<Node> {
 		}
 		if (indexNode != null) {
 			indexNode.createRelationshipTo(node, AmanziIndexRelationshipTypes.INDEX_LEAF);
-			// TODO: Update statistics in the index
+			// TODO: Update statistics in the index?
 		} else {
 			System.err.println("Failed to find appropriate index node for value node[" + node + "] with keys" + arrayString(keys));
 		}
@@ -707,10 +709,38 @@ class AmanziIndex implements PreparedIndex<Node> {
 	 * @throws IOException
 	 */
 	private Node getIndexNode(int[] keys) throws IOException {
+		// +. TODO: by KK 
+		// 1. Add node indexed data to the parameters
+		
+		
+		
 		// search as high as necessary to find a node that covers this value
 		IndexLevel indexLevel = getLevelIncluding(keys);
 		// now step down building index all the way to the bottom
 		while (indexLevel.getLevel() > 0) {
+			// FIXME: tmp by KK
+			// 1. Get the index node on the current level
+			Node node = indexLevel.getIndexNode();
+			
+			// 2. Get the function nodes for the index node, see to IndexLevel.java of
+			//    creating new function nodes 
+			// 3. for loop the indexed data, for the update of the function nodes
+			// Node funcNode = 
+			// String funcNodeName = (String) funcNode.getPorperty("name");
+			// String funcNodeType = (String) funcNode.getPorperty("property_type");
+			// String value = data.getProperty(funcNodeName);
+			// if (funcNodeType.equalsIgnoreCase())
+			// 3.1 Numbers, cast value to Integra: [min,max,sum?,avaerage?;count]
+			//   funcNode.update(Integer/Long/Float);
+			// 3.2 String / ListString: [funcNode.getproperty()=>HashMap; HashMap.containsKey() ? HashMap.put(key, value) : HashMap.put(key, 1);
+			// 	 funcNode.update(String);
+			// for (String propKey : data.getPropertyKeys()) {
+			// 		Object val = node.getProperty(propKey);
+			// }
+			
+			
+			// FIXME: tmp by KK
+			
 			IndexLevel lowerLevel = levels.get(indexLevel.getLevel() - 1);
 			// Set the value in the lower level to the desired value to index,
 			// this removes internal
@@ -719,6 +749,9 @@ class AmanziIndex implements PreparedIndex<Node> {
 			lowerLevel.setKeys(indexLevel, keys);
 			// Finally step down one level and repeat until we're at the bottom
 			indexLevel = lowerLevel;
+			
+			// TODO: for indexNode at each level, update the function aggregation values
+			
 		}
 		return indexLevel.getIndexNode();
 	}
@@ -798,6 +831,8 @@ class AmanziIndex implements PreparedIndex<Node> {
 	}
 
 	public void finishUp() {
+		// Update the configurations
+		updateConfig();
 		try {
 			flush();
 		} catch (IOException e) {
@@ -866,6 +901,15 @@ class AmanziIndex implements PreparedIndex<Node> {
 			throw new RuntimeException("Not allowed to overwrite existing configuration for index '" + name + "'");
 		} else {
 			config.save(getIndexNode());
+		}
+	}
+	
+	private void updateConfig() {
+		Relationship rel = indexNode.getSingleRelationship(AmanziIndexRelationshipTypes.INDEX_CONFIG, Direction.OUTGOING);
+		if (rel == null) {
+			throw new RuntimeException("No existing configuration found to  update for index '" + name + "'");
+		} else {
+			config.update(getIndexNode());
 		}
 	}
 
@@ -938,7 +982,7 @@ class AmanziIndex implements PreparedIndex<Node> {
 	}
 
 	private void debug(PrintStream out, Node node, int depth) {
-		if (depth > 7)
+		if (depth > 20)
 			return;
 		StringBuffer sb = new StringBuffer();
 		for (int i = 0; i < depth; i++) {

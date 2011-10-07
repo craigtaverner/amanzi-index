@@ -88,7 +88,6 @@ public class IndexLevel {
 			if (!Arrays.equals(newIndices, this.indices)) {
 				this.indices = newIndices;
 				this.indexNode = null;
-				// TODO: Support calculating min/max here
 			}
 		}
 		// First search the node tree for existing child index nodes that
@@ -110,7 +109,7 @@ public class IndexLevel {
 			indexNode.setProperty("index", indices);
 			indexNode.setProperty("type", "multi_index");
 			indexNode.setProperty("level", getLevel());
-			// TODO: Support storing min/max here
+			// TODO: Support aggregation, add function nodes to it
 		}
 		return indexNode;
 	}
