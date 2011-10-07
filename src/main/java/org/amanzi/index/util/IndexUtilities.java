@@ -48,26 +48,10 @@ public class IndexUtilities {
 		sb.append(i);
 	}
 	
-	public static long dateStringLong(String timeline, int [] ymd) {
-		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-M-d HH:mm:ss.SSS");
-		Date date;
-		String time = "";
-		if (timeline.length() > 12) {
-			// FIXME: Time in the full length
-			time = timeline;
-		} else {
-			if (ymd.length == 3) {
-				// By default, the Time value string format is HH:MM:SS.MS
-				// Add "0" at the end for time format parsing: 
-				// HH:mm:ss.SS -> HH:mm:ss.SSS
-				time = ymd[0] + "-" + ymd[1] + "-" + ymd[2]+ " " + 
-				((timeline.length() == 12) ? timeline : (timeline + "0"));
-			} else {
-				System.err.println("Unexpected date format encountered, invalid date!");
-			}
-		}
+	public static long dateStringLong(String time, String format) {
+		SimpleDateFormat dateFormat = new SimpleDateFormat(format);
 		try {
-			date = dateFormat.parse(time);
+			Date date = dateFormat.parse(time);
 			return date.getTime();
 		} catch (ParseException e) {
 			System.err.println("Unexpected date format encountered!");

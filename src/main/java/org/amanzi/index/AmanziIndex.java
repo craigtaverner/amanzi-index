@@ -27,7 +27,7 @@ import org.neo4j.graphdb.Traverser.Order;
 import org.neo4j.graphdb.index.IndexHits;
 import org.neo4j.graphdb.Traverser;
 
-class AmanziIndex implements PreparedIndex<Node> {
+public class AmanziIndex implements PreparedIndex<Node> {
 	private GraphDatabaseService db;
 	private IndexConfig config;
 	private Node indexNode;
