@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.amanzi.index</groupId>
   <artifactId>amanzi-index</artifactId>
-  <version>0.1-SNAPSHOT</version>
+  <version>0.2-SNAPSHOT</version>
   <name>Amanzi Index Components</name>
   <url>http://github.com/craigtaverner/amanzi-index/</url>
   <inceptionYear>December 2010</inceptionYear>
