@@ -4,33 +4,45 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class BigTextFileLoader implements Iterable<String> {
-	
+
+	private ZipFile _zipFile;
     private BufferedReader _reader;
     private long _size = 0;
     private String _name;
     
  
-    public BigTextFileLoader(String filePath) {
-		try {
-			_reader = getBufferedReader(filePath);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+    public void open(String filePath) throws IOException {
+		_reader = getBufferedReader(filePath);
     }
- 
+    
     public void close() {
-		try {
-		    _reader.close();
-		} catch (Exception ex) {}
+    	if (_reader != null) {
+	    	try {
+	    		_reader.close();
+	    		_reader = null;
+	    	} catch (IOException e) {
+    			// TODO log
+    			e.printStackTrace();	    		
+	    	}
+    	}
+    	
+    	if (_zipFile != null) {
+    		try {
+    			_zipFile.close();
+    			_zipFile = null;
+    		} catch (IOException e) {
+    			// TODO log
+    			e.printStackTrace();
+    		}
+    	}
     }
  
     public Iterator<String> iterator() {
@@ -54,49 +66,72 @@ public class BigTextFileLoader implements Iterable<String> {
     		String name = file.getName();
     		if (name.toLowerCase().endsWith("zip")) {
     			// One entry only
-    			ZipFile zf = new ZipFile(file);
-    			Enumeration<? extends ZipEntry> entries = zf.entries();
-				if (entries.hasMoreElements()) {
-					ZipEntry ze = (ZipEntry) entries.nextElement();
-					_name = ze.getName();
-					_size = ze.getSize();
-					return new BufferedReader(new InputStreamReader(
-							zf.getInputStream(ze)));		
-				}
+    			_zipFile = new ZipFile(file);
+    			ZipEntry ze = (ZipEntry) _zipFile.entries().nextElement();
+				_name = ze.getName();
+				_size = ze.getSize();
+				return getBufferedReader(_zipFile.getInputStream(ze));		
     		} else {
         		_size = file.length();
         		_name = name;
-        		if (_name.toLowerCase().endsWith("gz"))
-        			return new BufferedReader(new InputStreamReader(
-        					new GZIPInputStream(new FileInputStream(file))));
-        		else
-        			return new BufferedReader(new InputStreamReader(
-        					new FileInputStream(file)));
+        		if (_name.toLowerCase().endsWith("gz")) {
+        			return getBufferedReader(new GZIPInputStream(new FileInputStream(file)));
+        		} else {
+        			return getBufferedReader(new FileInputStream(file));
+        		}
         	}
-    	}
-    	return null;
+    	}    	
     }
  
+    private BufferedReader getBufferedReader(InputStream stream) {
+    	return new BufferedReader(new InputStreamReader(stream));
+    }
+    
     private class FileIterator implements Iterator<String> {
-		private String _currentLine;
+    	
+		private String _cachedLine = null;
 	 
 		public boolean hasNext() {
-		    try {
-		    	if (_reader != null)
-		    		_currentLine = _reader.readLine();
-		    } catch (Exception ex) {
-				_currentLine = null;
-				ex.printStackTrace();
-		    }
-	 
-		    return _currentLine != null;
+			checkReaderIsOpen();
+			
+			if (_cachedLine == null) {
+				_cachedLine = readLine();
+			}
+			
+			return _cachedLine != null;
 		}
 	 
 		public String next() {
-		    return _currentLine;
+			checkReaderIsOpen();
+			
+		    if (_cachedLine != null) {
+		    	String result = _cachedLine;
+		    	_cachedLine = null;
+		    	return result;
+		    } else {
+		    	return readLine();
+		    }
 		}
 	 
 		public void remove() {
+			throw new UnsupportedOperationException();
+		}
+	
+		private String readLine() {
+		    try {
+		    	return _reader.readLine();
+		    } catch (IOException e) {
+				// TODO log
+				e.printStackTrace();
+				
+		    	return null;				
+		    }			
+		}
+		
+		private void checkReaderIsOpen() {
+			if (_reader == null) {
+				throw new IllegalStateException("No open File");
+			}
 		}
     }
 }
