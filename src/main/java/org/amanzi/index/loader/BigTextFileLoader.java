@@ -10,17 +10,15 @@ import java.util.Iterator;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 
-public class BigTextFileLoader implements Iterable<String>
-{
+public class BigTextFileLoader implements Iterable<String> {
+	
     private BufferedReader _reader;
     private long _size = 0;
     private String _name;
     
  
-    public BigTextFileLoader(String filePath)
-    {
+    public BigTextFileLoader(String filePath) {
 		try {
 			_reader = getBufferedReader(filePath);
 		} catch (IOException e) {
@@ -29,17 +27,13 @@ public class BigTextFileLoader implements Iterable<String>
 		}
     }
  
-    public void Close()
-    {
-		try
-		{
+    public void close() {
+		try {
 		    _reader.close();
-		}
-		catch (Exception ex) {}
+		} catch (Exception ex) {}
     }
  
-    public Iterator<String> iterator()
-    {
+    public Iterator<String> iterator() {
     	return new FileIterator();
     }
     
@@ -69,8 +63,7 @@ public class BigTextFileLoader implements Iterable<String>
 					return new BufferedReader(new InputStreamReader(
 							zf.getInputStream(ze)));		
 				}
-    		}
-    		else {
+    		} else {
         		_size = file.length();
         		_name = name;
         		if (_name.toLowerCase().endsWith("gz"))
@@ -84,19 +77,14 @@ public class BigTextFileLoader implements Iterable<String>
     	return null;
     }
  
-    private class FileIterator implements Iterator<String>
-    {
+    private class FileIterator implements Iterator<String> {
 		private String _currentLine;
 	 
-		public boolean hasNext()
-		{
-		    try
-		    {
+		public boolean hasNext() {
+		    try {
 		    	if (_reader != null)
 		    		_currentLine = _reader.readLine();
-		    }
-		    catch (Exception ex)
-		    {
+		    } catch (Exception ex) {
 				_currentLine = null;
 				ex.printStackTrace();
 		    }
@@ -104,13 +92,11 @@ public class BigTextFileLoader implements Iterable<String>
 		    return _currentLine != null;
 		}
 	 
-		public String next()
-		{
+		public String next() {
 		    return _currentLine;
 		}
 	 
-		public void remove()
-		{
+		public void remove() {
 		}
     }
 }
